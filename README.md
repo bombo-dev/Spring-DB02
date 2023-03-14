@@ -38,3 +38,13 @@
     - `MapSqlParameterSource` 는 메소드 체이닝 방식을 이용해서 `.addValue(key, value)` 를 넣어주는 방식이다. `BeanPropertySqlParameterSource`와 달리 이름을 지정한 매핑에 직접 값을 넣어주는 것이기 때문에 확장성이 좋지만, 귀찮을 수 있다는 문제가 있다.
   2. `Collections Map`의 순수 기능을 사용하는 것이다. Map을 생성하고 거기에 key, value를 통해 값을 지정하면 된다. Map의 순수기능을 편리하게 해주는 것이 `MapSqlParameterSource` 라고 생각하면 된다.
 - 그리고 RowMapper 관련해서도 더욱 개선이 되었다. 기존에 `RowMapper`에 있는 필드들을 다 적고 직접 매핑해줘야 하는 문제가 있었지만, `BeanPropertyRowMapper` 라는 스프링에서 제공해주는 클래스를 사용하면 `BeanPropertyRowMapper.newInstance(xxx.class)` 메서드를 사용하여 Property 규약을 통해 알아서 매핑해준다. Property 규약을 통해 매핑해주는 것이기 때문에 Getter, Setter 가 꼭 있어야 한다. 그러나 DB에 작성 규약은 snake 방식이고 java는 camel 방식이라서 옛날에는 db를 조회할 때 필드이름 as java필드이름 으로 별칭을 지정해줘야 했다. 예를 들어서 item_name as itemName 처럼 말이다. 이렇게 규약이 다르기 때문에 귀찮은 작업이 있었는데 현재에는 알아서 camel 케이스로 변환을 해주어서 크게 신경 쓸 필요가 없다고 한다. 
+
+### SimpleJdbcInsert
+- Insert를 편리하게 만들어주는 클래스이다. 다음과 같이 사용할 수 있다. SimpleJdbcInsert를 물론 빈으로 등록해서 다른 곳에서도 사용 할 수 있지만 보통 Create는 한 곳에서 사용하는 것도 많고 빈으로 등록하게 될 때 어차피 TableName도 다 지정을 해줘야 하기 때문에, 빈으로 등록하는 것을 권장하지는 않는다. 
+```java
+new SimpleJdbcInsert(dataSource)
+  .withTableName("item")
+  .usingGeneratedKeyColumns("id") // 기본키 자동생성 PK 이름
+  .usingColumns("item_name", "price", "quantity"); // 생략 가능
+```
+- 실제로 save를 하게 될 때 필요한 파라미터는 이전에 배운 `BeanPropertySqlParameterSource`를 이용해서 parameter를 만들고 `jdbcInsert.execute(param)`을 하게 되면 바로 생성이 된다. 기본키가 필요할 경우에는 `jdbcInsert.executeAndReturnKey(param)` 을 사용해서 기본키를 받으면 된다.
