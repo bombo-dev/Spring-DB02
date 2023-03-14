@@ -20,3 +20,10 @@
 
 ## JdbcTemplate
 - JdbcTemplate는 SQL Mapper 기능을 제공해주는 것중에 하나로, 위에 작성되어있듯이 여러가지 반복 작업을 제거해준다. 커넥션 획득, Statement 준비와 실행, release, 예외 발생 시 스프링 예외 변환기 실행 까지 다양한 부분을 도와준다. 굉장히 좋은 도구이지만 아쉽게도 동적 쿼리에 대한 적용이 어렵다.
+
+### JdbcTemplate 데이터 변경
+- JdbcTemplate 에서 데이터를 변경하는 부분에서는 `template.update()` 를 사용해야 한다. 데이터를 변경한다고 하면 INSERT, UPDATE, DELETE를 얘기한다. 구시대적인 방법으로 autoIncrement로 기본키가 자동으로 올라가면서 Item을 응답할 때 값을 넘기기 위해 Id를 받아와야하는데 이때, KeyHolder를 사용해서 가져올 수 있다.
+
+### JdbcTemplate 데이터 조회
+- 데이터를 조회하는 경우에는 두 가지가 있다. template.queryForObject(), template.query() 이다. 전자의 경우 한 개의 결과값만을 반환하고, 후자의 경우 여러개를 반환한다. 예제 코드에서는 Optional을 사용하여 null 방지를 해두었는데, JdbcTemplate는 스프링 예외 변환기도 자동으로 해주기 때문에, 결과가 없으면 EmptyResultDataAccessException 을 반환한다. 전자의 경우 데이터가 여러개가 호출되어도 예외가 발생하는데 이때는 IncorrectResultSizeDataAccessException 예외가 발생한다.
+- 데이터 조회를 위해서 RowMapper를 사용한 것을 볼 수 있는데 RowMapper는 기존의 JdbcTemplate를 안쓰던 시절에 사용하던 `while(!rs.next())`내부 로직을 대신 실행해주는 것이다.
