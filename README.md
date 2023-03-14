@@ -27,3 +27,14 @@
 ### JdbcTemplate 데이터 조회
 - 데이터를 조회하는 경우에는 두 가지가 있다. template.queryForObject(), template.query() 이다. 전자의 경우 한 개의 결과값만을 반환하고, 후자의 경우 여러개를 반환한다. 예제 코드에서는 Optional을 사용하여 null 방지를 해두었는데, JdbcTemplate는 스프링 예외 변환기도 자동으로 해주기 때문에, 결과가 없으면 EmptyResultDataAccessException 을 반환한다. 전자의 경우 데이터가 여러개가 호출되어도 예외가 발생하는데 이때는 IncorrectResultSizeDataAccessException 예외가 발생한다.
 - 데이터 조회를 위해서 RowMapper를 사용한 것을 볼 수 있는데 RowMapper는 기존의 JdbcTemplate를 안쓰던 시절에 사용하던 `while(!rs.next())`내부 로직을 대신 실행해주는 것이다.
+
+# 2023-03-15
+### JdbcTemplate 이름 지정 파라미터
+- 기존에 `JdbcTemplate` 에서 파라미터를 바인딩 할 때에 꼭 순서를 맞춰서 바인딩을 해주어야 했다. 연습을 하는 과정에서는 파라미터의 개수가 적기도 하고, 나 혼자 하는 것이기 때문에 문제가 발생할 일이 없지만 실제로 협업을 하면서 다른 개발자가 실수로 위치를 바꾼다거나, 새로운 파라미터가 추가가 된다거나, 이게 찾기 쉬울 것 같지만 실무에서는 파라미터 개수가 많게는 20개도 넘기 때문에 찾는 것도 어렵고, 만약에 데이터가 잘못 들어가게 되었을 때, 최근에는 데이터를 시간 단위로 백업을 하면서 롤백을 가능하게 하는 기능이 있으나, 그렇게 하면 전체 데이터가 롤백이 되는 것이기때문에, 특정 데이터만 롤백이 되도록 해야한다. 그렇게 잘못 들어간 데이터들을 고쳐야 하는데, 쉬운 작업은 아니다.
+- 이러한 문제를 해결하기 위해서 이름 지정 파라미터가 등장했고, 말 그대로 순서가 아닌 우리가 평소에 Map을 Key Value를 사용했던 것처럼 key에 따라 값을 넣는 방식이다. JdbcTemplate를 사용하지 않고 `NamedParameterJdbcTemplate` 를 사용한다. 실제로 보면 사용하는 쿼리들은 비슷해서 인터페이스를 하고 다형성을 이용하는게 좋을 것 같은데 당시에는 인터페이스를 효율적으로 사용하지 않았던 탓일까 인터페이스로 구현이 되어있지도 않았고, JdbcTemplate를 실제로도 많이 사용하지 않기 때문에 인터페이스로 교체를 안하는 것 같다.
+- `NamedParameterJdbcTemplate`는 이제 `이름 지정 파라미터`를 사용할 수 있는데, 파라미터 지정방식이 크게 3가지가 있다.
+  1. `SqlParameterSource` 인터페이스 사용 : SqlParamterSource 인터페이스는 `BeanPropertySqlParameterSource`, `MapSqlParameterSource` 라는 두 개의 구현체를 사용한다.
+    - 먼저 `BeanPropertySqlParameterSource`는 객체를 가지고 오면 해당 객체에 있는 내용과 sql에 이름을 지정한 매핑을 보고 알아서 매핑해주는 아주 유용한 도구이다. 실제로도 `MapSqlParameterSource` 보다 더 편리한 기능을 제공하는데, 단점은 객체에 없는 다른 파라미터를 추가할 수 없다는 것이 문제이다. 따라서 이럴 경우에 사용하는게 `MapSqlParameterSource` 이다.
+    - `MapSqlParameterSource` 는 메소드 체이닝 방식을 이용해서 `.addValue(key, value)` 를 넣어주는 방식이다. `BeanPropertySqlParameterSource`와 달리 이름을 지정한 매핑에 직접 값을 넣어주는 것이기 때문에 확장성이 좋지만, 귀찮을 수 있다는 문제가 있다.
+  2. `Collections Map`의 순수 기능을 사용하는 것이다. Map을 생성하고 거기에 key, value를 통해 값을 지정하면 된다. Map의 순수기능을 편리하게 해주는 것이 `MapSqlParameterSource` 라고 생각하면 된다.
+- 그리고 RowMapper 관련해서도 더욱 개선이 되었다. 기존에 `RowMapper`에 있는 필드들을 다 적고 직접 매핑해줘야 하는 문제가 있었지만, `BeanPropertyRowMapper` 라는 스프링에서 제공해주는 클래스를 사용하면 `BeanPropertyRowMapper.newInstance(xxx.class)` 메서드를 사용하여 Property 규약을 통해 알아서 매핑해준다. Property 규약을 통해 매핑해주는 것이기 때문에 Getter, Setter 가 꼭 있어야 한다. 그러나 DB에 작성 규약은 snake 방식이고 java는 camel 방식이라서 옛날에는 db를 조회할 때 필드이름 as java필드이름 으로 별칭을 지정해줘야 했다. 예를 들어서 item_name as itemName 처럼 말이다. 이렇게 규약이 다르기 때문에 귀찮은 작업이 있었는데 현재에는 알아서 camel 케이스로 변환을 해주어서 크게 신경 쓸 필요가 없다고 한다. 
