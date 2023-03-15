@@ -31,16 +31,18 @@ public class ItemServiceApplication {
 		return new TestDataInit(itemRepository);
 	}
 
-	@Bean
-	@Profile("test")
-	public DataSource dataSource(){
-		log.info("메모리 데이터베이스 초기화");
-		DriverManagerDataSource dataSource = new DriverManagerDataSource();
-		dataSource.setDriverClassName("org.h2.Driver");
-		dataSource.setUrl("jdbc:h2:mem:db;DB_CLOSE_DELAY=-1"); // 임베디드 모드에서는 커넥션 연결이 끊어지면 데이터 베이스도 종료되는데 이를 방지하기 위함이다.
-		dataSource.setUsername("sa");
-		dataSource.setPassword("");
-		return dataSource;
-	}
+
+	// 자동 등록
+//	@Bean
+//	@Profile("test")
+//	public DataSource dataSource(){
+//		log.info("메모리 데이터베이스 초기화");
+//		DriverManagerDataSource dataSource = new DriverManagerDataSource();
+//		dataSource.setDriverClassName("org.h2.Driver");
+//		dataSource.setUrl("jdbc:h2:mem:db;DB_CLOSE_DELAY=-1"); // 임베디드 모드에서는 커넥션 연결이 끊어지면 데이터 베이스도 종료되는데 이를 방지하기 위함이다.
+//		dataSource.setUsername("sa");
+//		dataSource.setPassword("");
+//		return dataSource;
+//	}
 
 }
