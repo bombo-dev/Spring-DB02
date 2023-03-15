@@ -19,8 +19,12 @@ repositories {
 }
 
 dependencies {
+	// JdbcTemplate
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	// h2 DB
 	runtimeOnly 'com.h2database:h2'
+	// MyBatis SpringBoot 3.0 이상은 3.0.1
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.0'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
