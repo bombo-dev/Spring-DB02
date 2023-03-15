@@ -66,3 +66,20 @@ new SimpleJdbcInsert(dataSource)
 ### 임베디드 모드 DB
 - 테스트를 수행할 때, 위에서 처럼 별도의 데이터베이스를 분리하고, 테스트를 하는 작업은 번거로운 일이다. H2 데이터베이스는 자바로 개발이 되어있는데 특수하게 JVM 안에서 메모리 모드로 동작이 가능하다. 이렇게 애플리케이션에 내장되서 사용한다고 해서 임베디드 모드라고 한다. resources 패키지 아래에 schema.sql 파일은 만들어서, 테이블 생성 쿼리를 등록을 해놓으면 애플리케이션이 올라가는 단계에서 자동적으로 테이블이 생성이 된다. [참고 공식문서](https://docs.spring.io/spring-boot/docs/current/reference/html/howto.html#howto.data-initialization.using-basic-sql-scripts)
 - 추가적으로 이전에 test에서 프로필을 나누어 사용하면서 기존에 개발모드에서 쓰는 db를 가져다가 똑같은 링크를 두고 사용했었는데, 아무것도 입력해주지 않으면 스프링부트가 데이터소스를 등록할 때 url을 자동으로 고유한 메모리로 처리를 해준다고 한다. 예전에 테스트 당시에 저런 문제 때문에 충돌 문제가 있었는데, 서로 다른 db 영역을 사용하기 때문에 충돌이 발생할 문제 또한 없다. 또한 고유한 db이름을 사용하지 않도록 할 수 있는데, 지정하면 testdb 라는 이름으로 등록이 된다. 그러나 testdb가 또 다르게 필요한 것이 여러 개가 있을 수도 있기 때문에 권장하지는 않는다. 
+
+## MyBatis
+
+### MyBatis 사용 이유
+기존에 JdbcTemplate를 사용했을 때 SQL을 개발자가 직접 작성해줄 때, 다음과 같은 두 가지 문제점이 있었다.
+1. 동적 쿼리 작성에 어려움
+2. SQL을 직접 작성하면서 긴 SQL을 작성할 때 실수로 띄어쓰기를 누락했을 경우   
+
+2번 예시는 다음과 같은 상황을 얘기하는 것이다.
+```java
+String sql = "select image_name, image_original_name, image_create_date, image_update_date"
+      + "from image";
+      // select image_name, image_original_name, image_create_date, image_update_datefrom image <-- 오류 발생
+```
+MyBatis는 Xml을 이용함으로써 위와 같이 띄어쓰기를 크게 신경써주지 않아도 되고, <where> </where> <if> </if> 같은 문법이 있어 동적 쿼리를 작성하는데에도 편리함을 가져다준다. 참고로 이름 지정 파라미터를 사용한다.   
+기존에 jdbcTemplate에서도 snakeCase를 camelCase로 변경해줬던 것 처럼 myBatis도 동일하게 해당 기능을 제공해준다.
+단 Mapper를 지정할 때 타입 정보를 입력해줘야 하는데 properties, yml에서 type-aliases-package에 패키지 명을 지정해주면 타입 정보를 입력할 때 패키저 이름을 생략하고 타입 정보 지정이 가능하다. 여러 위치는 `,` , `;` 로 구분 가능하다.
