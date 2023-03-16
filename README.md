@@ -103,3 +103,6 @@ MyBatis는 Xml을 이용함으로써 위와 같이 띄어쓰기를 크게 신경
 
 ### JPA 테스트에서의 업데이트
 - JPA에서 한 트랙잭션 내에서 생성과 Update가 동시에 일어난다면 영속성 컨텍스트 캐시에서 값을 확인하고 수정을 한다. 따라서 테스트를 하고 나면 Commit을 하지 않고 Rollback을 하기 때문에, update 쿼리가 날라가지 않는 모습을 볼 수 있었다. 물론 em.flush() 도 가능한 방법이긴 하다. 실제로 Commit을 하고 나면 쿼리가 제대로 날라가는 것을 볼 수 있는데, JPA를 처음 공부했을 떄, 트랜잭션과 락에 대해서 거의 모르고 있던 상태로 강의를 들어서 이해를 잘못한 것 같다. JPA 강의도 다시 정주행 할 생각이다.
+
+### JPA 에서의 예외변환
+- 기존에 스프링 예외 추상화에 대해서 배우고 JPA 에서도 그럼 스프링 예외 추상화가 적용이 되어있는 건가? 어떻게 변환하는거지? 라는 생각을 가지고 있던 와중에 해당 내용이 나오게 되었다. JPA는 자바 표준이기 떄문에 스프링에서 만든 기술이 아니다. 따라서 JPA는 그 자체로 런타임 에외를 상속받는 `PersistenceException`과 그 하위 예외들 `IllegalStateException`, `IllegalArgumentException` 을 가지고 있고 해당 예외를 반환한다. 하지만, 실제로 실행해보면 스프링의 예외 변환기가 실행된 것을 볼 수 있는데, @Repository에 그 기능이 숨어있었다. @Controller는 MVC 기능을 사용한다는 의미를 부여해주는 것과 비슷하게 @Repository는 해당 클래스를 예외 변환 AOP의 대상으로 잡고 Spring 예외 변환기가 실행된다. 만약 스프링과 JPA를 함께 사용하는 경우에는 JPA 예외 변환기인 PersistenceExceptionTranslator를 등록한다. 실제로 Repository에서 예외가 발생하면 프록시 패턴을 통해 PersistenceException에서 DataAccessException 예외로 전환해주는 것을 볼 수 있다. @Repository 및 @Transactional 애노테이션을 등록해두면 Repository 클래스는 프록시 패턴이 사용되었다는 것을 getClass()를 통해서도 확인 할 수 있다. 다만 원래 레포지토리에 @Transactional 을 사용하는 건 적절하지 않다. 비즈니스 로직의 시작 지점에서 @Transactional을 등록해주는 것이 옳다.
