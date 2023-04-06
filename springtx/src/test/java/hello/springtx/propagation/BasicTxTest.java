@@ -100,4 +100,22 @@ public class BasicTxTest {
         log.info("외부 트랜잭션 커밋");
         txManager.commit(outer);
     }
+
+    @Test
+    void outer_rollback() {
+        log.info("외부 트랜잭션 시작");
+        TransactionStatus outer = txManager.getTransaction(new DefaultTransactionAttribute());
+        log.info("outer.isNewTransaction()={}", outer.isNewTransaction());
+
+        log.info("내부 트랜잭션 시작");
+        TransactionStatus inner = txManager.getTransaction(new DefaultTransactionAttribute());
+        log.info("inner.isNewTransaction()={}", inner.isNewTransaction());
+        log.info("내부 트랜잭션 커밋");
+        // 내부 트랜잭션에서 커밋 시, 물리 트랜잭션에 어떠한 영향도 끼치지 않음.
+        txManager.commit(inner);
+
+        log.info("외부 트랜잭션 롤백");
+        // 외부 트랜잭션 롤백 시, 해당 트랜잭션에 참여했던 모든 논리 트랜잭션 모두 롤백
+        txManager.rollback(outer);
+    }
 }
