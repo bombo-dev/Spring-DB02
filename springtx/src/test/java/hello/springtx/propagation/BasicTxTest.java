@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
@@ -158,5 +159,54 @@ public class BasicTxTest {
         log.info("외부 트랜잭션 롤백");
         // 외부에서 트랜잭션 동기화 매니저에서 rollbackOnly = true 인 것을 확인하고, 정상 동작
         txManager.rollback(outer);
+    }
+
+    @Test
+    void inner_rollback_requiresNew() {
+        log.info("외부 트랜잭션 시작");
+        TransactionStatus outer = txManager.getTransaction(new DefaultTransactionAttribute());
+        log.info("outer.isNewTransaction()={}", outer.isNewTransaction());
+
+        log.info("내부 트랜잭션 시작");
+        // 트랜잭션 옵션을 REQUIRES_NEW 옵션으로 변경
+        DefaultTransactionAttribute definition = new DefaultTransactionAttribute();
+        definition.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        // Suspending current transaction(외부 트랜잭션), creating new transaction with name [null]
+        TransactionStatus inner = txManager.getTransaction(definition);
+        log.info("inner.isNewTransaction()={}", inner.isNewTransaction());
+
+        log.info("내부 트랜잭션 롤백");
+        txManager.rollback(inner); // 롤백
+        // Resuming suspended transaction(외부 트랜잭션 재 수행) after completion of inner transaction
+        log.info("외부 트랜잭션 커밋");
+        txManager.commit(outer); // 커밋
+    }
+
+    @Test
+    void inner_rollback_triple_requires() {
+        log.info("외부 트랜잭션 시작");
+        TransactionStatus outer = txManager.getTransaction(new DefaultTransactionAttribute());
+        log.info("outer.isNewTransaction()={}", outer.isNewTransaction());
+
+        log.info("내부 트랜잭션 시작");
+        TransactionStatus inner = txManager.getTransaction(new DefaultTransactionAttribute());
+        log.info("inner.isNewTransaction()={}", inner.isNewTransaction());
+
+        log.info("내부의 내부 트랜잭션 시작");
+        TransactionStatus in_inner = txManager.getTransaction(new DefaultTransactionAttribute());
+        log.info("inner.isNewTransaction()={}", in_inner.isNewTransaction());
+        log.info("내부의 내부 트랜잭션 롤백");
+        // 물리 트랜잭션에는 어떠한 영향을 끼치지 않음.
+        txManager.rollback(in_inner); // 트랜잭션 동기화 매니저에 rollbackOnly 를 true 로 마킹함.
+
+        log.info("내부 트랜잭션 커밋");
+        // 이때는 예외 발생을 따로 하지 않음
+        // Participating transaction failed - marking existing transaction as rollback-only 만 표시
+        txManager.commit(inner);
+        log.info("외부 트랜잭션 커밋");
+        // 트랜잭션 동기화 매니저에서 rollbackOnly 가 true 인지 확인. true 라면 무조건 rollback 해야하므로, 예상치 못한 동작
+        // UnexpectedRollbackException 발생
+        Assertions.assertThatThrownBy(() -> txManager.commit(outer))
+                .isInstanceOf(UnexpectedRollbackException.class);
     }
 }
