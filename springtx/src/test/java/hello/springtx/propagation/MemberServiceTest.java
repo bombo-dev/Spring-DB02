@@ -138,4 +138,24 @@ class MemberServiceTest {
         Assertions.assertThat(memberRepository.find(username).isPresent()).isFalse();
         Assertions.assertThat(logRepository.find(username).isPresent()).isFalse();
     }
+
+    /**
+     * memberService @Transactional : ON
+     * memberRepository @Transactional : ON
+     * logRepository @Transactional : ON(REQUIRES_NEW) Exception
+     */
+    // 각 트랜잭션들이 참여를 하고, 하나의 논리 트랜잭션에서 에외가 발생해 처리를 하지 못하면 rollbackOnly = true 로 변환.
+    @Test
+    void recoverException_success() {
+        // given
+        String username = "로그예외_recoverException_success";
+
+        // when
+        memberService.joinV2(username);
+
+        // then
+        // 멤버 저장은 커밋이 되고, 로그는 롤백이 되어 트랜잭션의 예외 발생시에 대한 복구가 성공한다.
+        Assertions.assertThat(memberRepository.find(username).isPresent()).isTrue();
+        Assertions.assertThat(logRepository.find(username).isPresent()).isFalse();
+    }
 }
