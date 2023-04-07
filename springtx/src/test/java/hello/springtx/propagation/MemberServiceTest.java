@@ -76,4 +76,23 @@ class MemberServiceTest {
         Assertions.assertThat(memberRepository.find(username).isPresent()).isTrue();
         Assertions.assertThat(logRepository.find(username).isPresent()).isTrue();
     }
+
+    /**
+     * memberService @Transactional: ON
+     * memberRepository @Transactional: ON
+     * logRepository @Transactional : ON
+     */
+    // 각 저장소 쿼리의 트랜잭션들은 기존에 존재하던 트랜잭션에 참가를 한다.
+    @Test
+    void outerTxOn_success() {
+        //given
+        String username = "outerTxOn_success";
+
+        //when
+        memberService.joinV1(username);
+
+        //then
+        Assertions.assertThat(memberRepository.find(username).isPresent()).isTrue();
+        Assertions.assertThat(logRepository.find(username).isPresent()).isTrue();
+    }
 }
