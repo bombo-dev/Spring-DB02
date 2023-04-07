@@ -57,4 +57,23 @@ class MemberServiceTest {
         Assertions.assertThat(memberRepository.find(username).isPresent()).isTrue();
         Assertions.assertThat(logRepository.find(username).isPresent()).isFalse();
     }
+
+    /**
+     * memberService @Transactional:ON
+     * memberRepository @Transactional:OFF
+     * logRepository @Transactional : OFF
+     */
+    // 트랜잭션을 처음에만 만들고, 이후에 생성하지 않음.
+    @Test
+    void singleTx() {
+        //given
+        String username = "outerTxOff_success";
+
+        //when
+        memberService.joinV1(username);
+
+        //then
+        Assertions.assertThat(memberRepository.find(username).isPresent()).isTrue();
+        Assertions.assertThat(logRepository.find(username).isPresent()).isTrue();
+    }
 }

@@ -15,7 +15,7 @@ public class LogRepository {
 
     private final EntityManager em;
 
-    @Transactional
+//    @Transactional
     public void save(Log logMessage) {
         log.info("log 저장");
         em.persist(logMessage);
@@ -26,7 +26,6 @@ public class LogRepository {
         }
     }
 
-    @Transactional
     public Optional<Log> find(String message) {
         log.info("log 출력");
 
